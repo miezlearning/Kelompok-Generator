@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pembuat Kelompok Acak</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background-color: #FDFEFD;
+            color: #9B0104;
+        }
+
+        .kartu-tim {
+            background-color: #F3E7E6;
+            transition: all 0.3s ease;
+        }
+
+        .kartu-tim:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+
+        .btn-hover {
+            transition: all 0.3s ease;
+        }
+
+        .btn-hover:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.5);
+        }
+
+        .input-focus {
+            transition: all 0.3s ease;
+        }
+
+        .input-focus:focus {
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+        }
+    </style>
+</head>
+
+<body class="font-sans">
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-3xl font-bold text-center mb-8 text-red-600 fade-in">Pembuat Kelompok Praktikum</h1>
+        <div class="bg-gray-200 shadow-lg rounded-lg p-6 mb-8 fade-in" style="animation-delay: 0.2s;">
+            <textarea id="nama-nama" rows="8" class="w-full p-2 border rounded mb-4 bg-gray-100 text-black input-focus"
+                placeholder="Masukkan nama-nama, satu nama per baris"></textarea>
+            <div class="flex mb-4">
+                <select id="metodePembagian" class="w-1/3 p-2 border rounded-l bg-gray-100 text-black input-focus">
+                    <option value="jumlahTim">Jumlah Tim</option>
+                    <option value="jumlahAnggota">Jumlah Anggota per Tim (Angka atau Rentang)</option>
+                </select>
+                <input type="text" id="nilaiPembagian" class="w-1/3 p-2 border-t border-b border-r bg-gray-100 text-black input-focus"
+                    placeholder="Masukkan angka atau rentang (misal 3 atau 3-4)">
+                <button onclick="buatTim()" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-r flex-grow btn-hover">Buat Tim</button>
+            </div>
+
+            <div class="flex items-center mb-4">
+                <a for="seimbangkanTim" class="text-gray-700">*Pisahkan dengan per baris.</a>
+            </div>
+            <div class="flex items-center mb-4">
+                <input type="checkbox" id="seimbangkanTim" class="mr-2">
+                <label for="seimbangkanTim" class="text-gray-700">Seimbangkan jumlah anggota tim</label>
+            </div>
+        </div>
+
+        <div class="flex justify-between items-center mb-4 fade-in" style="animation-delay: 0.4s;">
+            <h2 class="text-2xl font-bold text-red-600">Kelompok yang Dihasilkan</h2>
+            <button onclick="salinSemuaTim()" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded btn-hover">Salin Semua Tim</button>
+        </div>
+        <div id="hasil" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+    </div>
+
+    <footer class="bg-gray-200 mt-8 p-4">
+        <div class="flex justify-center items-center mb-4 space-x-4">
+            <img src="assets/image/unmul.png" alt="Logo Universitas Mulawarman" style="width: 80px;">
+            <img src="assets/image/prak.png" alt="Logo Praktikum" style="width: 80px;">
+        </div>
+        <div class="text-center text-gray-700">
+            <p>Universitas Mulawarman: <a href="https://unmul.ac.id" class="text-red-600 hover:text-red-800">unmul.ac.id</a></p>
+            <p>Instagram Praktikum: <a href="https://instagram.com/praktikumif_unmul" class="text-red-600 hover:text-red-800">@praktikumif_unmul</a></p>
+        </div>
+    </footer>
+
+    <script>
+        function buatTim() {
+            const inputNama = document.getElementById('nama-nama').value;
+            const metodePembagian = document.getElementById('metodePembagian').value;
+            const nilaiPembagian = document.getElementById('nilaiPembagian').value;
+            const seimbangkanTim = document.getElementById('seimbangkanTim').checked;
+            const namaArray = inputNama.split(/\r?\n/).filter(nama => nama.trim() !== '');
+
+            if (namaArray.length < 2) {
+                alert('Masukkan setidaknya 2 nama!');
+                return;
+            }
+
+            let tim = [];
+            if (metodePembagian === 'jumlahTim') {
+                const jumlahTim = parseInt(nilaiPembagian);
+                if (jumlahTim > namaArray.length) {
+                    alert('Jumlah tim tidak boleh lebih banyak dari jumlah nama!');
+                    return;
+                }
+                tim = buatTimBerdasarkanJumlah(namaArray, jumlahTim, seimbangkanTim);
+            } else {
+                tim = buatTimBerdasarkanAnggota(namaArray, nilaiPembagian, seimbangkanTim);
+            }
+
+            tampilkanTim(tim);
+        }
+
+        function buatTimBerdasarkanJumlah(namaArray, jumlahTim, seimbangkan) {
+            const acakNama = namaArray.sort(() => Math.random() - 0.5);
+            const tim = Array.from({ length: jumlahTim }, () => []);
+
+            if (seimbangkan) {
+                const ukuranDasar = Math.floor(namaArray.length / jumlahTim);
+                const anggotaTambahan = namaArray.length % jumlahTim;
+                let indeksNama = 0;
+
+                for (let i = 0; i < jumlahTim; i++) {
+                    const ukuranTim = i < anggotaTambahan ? ukuranDasar + 1 : ukuranDasar;
+                    tim[i] = acakNama.slice(indeksNama, indeksNama + ukuranTim);
+                    indeksNama += ukuranTim;
+                }
+            } else {
+                acakNama.forEach((nama, indeks) => {
+                    tim[indeks % jumlahTim].push(nama);
+                });
+            }
+
+            return tim;
+        }
+
+        function buatTimBerdasarkanAnggota(namaArray, nilaiPembagian, seimbangkan) {
+            const acakNama = namaArray.sort(() => Math.random() - 0.5);
+            const rentang = nilaiPembagian.split('-').map(Number);
+
+            let minAnggota, maxAnggota;
+            if (rentang.length === 1) {
+                minAnggota = maxAnggota = rentang[0];
+            } else {
+                minAnggota = rentang[0];
+                maxAnggota = rentang[1];
+            }
+
+            if (!minAnggota || (maxAnggota && minAnggota > maxAnggota)) {
+                alert('Masukkan angka atau rentang yang valid, misalnya "3" atau "3-4".');
+                return [];
+            }
+
+            const tim = [];
+            let anggotaSaatIni = 0;
+
+            while (anggotaSaatIni < namaArray.length) {
+                const jumlahAnggota = Math.floor(Math.random() * (maxAnggota - minAnggota + 1)) + minAnggota;
+                const timBaru = acakNama.slice(anggotaSaatIni, anggotaSaatIni + jumlahAnggota);
+                tim.push(timBaru);
+                anggotaSaatIni += jumlahAnggota;
+            }
+
+            return tim;
+        }
+
+        function tampilkanTim(tim) {
+            const hasilDiv = document.getElementById('hasil');
+            hasilDiv.innerHTML = '';
+
+            tim.forEach((tim, indeks) => {
+                const divTim = document.createElement('div');
+                divTim.className = 'kartu-tim p-4 rounded-lg fade-in';
+                divTim.style.animationDelay = `${0.1 * indeks}s`;
+                divTim.innerHTML = `
+                    <h3 class="font-bold text-lg mb-2 text-white-300">Kelompok ${indeks + 1}</h3>
+                    <ul class="space-y-2">
+                        ${tim.map(nama => `<li class="flex items-center">
+                            <span class="w-2 h-2 bg-gray-400 rounded-full mr-2"></span>
+                            ${nama}
+                        </li>`).join('')}
+                    </ul>`;
+                hasilDiv.appendChild(divTim);
+            });
+        }
+
+        function salinSemuaTim() {
+            const hasilDiv = document.getElementById('hasil');
+            const teksTim = Array.from(hasilDiv.children).map(divTim => {
+                const namaTim = divTim.querySelector('h3').textContent;
+                const anggota = Array.from(divTim.querySelectorAll('li')).map(li => li.textContent.trim());
+                return `${namaTim}\n${anggota.join('\n')}`;
+            }).join('\n\n');
+
+            navigator.clipboard.writeText(teksTim).then(() => {
+                alert('Semua kelompok telah disalin ke clipboard!');
+            }).catch(err => {
+                console.error('Gagal menyalin kelompok: ', err);
+            });
+        }
+    </script>
+</body>
+
+</html>
